@@ -1,0 +1,81 @@
+{
+ "id": "./",
+ "name": "AXIOM — SAT Math",
+ "short_name": "AXIOM",
+ "description": "SAT Math from 0 to 800: plain-language lessons, practice and Axi, a study buddy that solves every step. Works offline.",
+ "lang": "en",
+ "dir": "ltr",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "display_override": [
+  "standalone",
+  "minimal-ui"
+ ],
+ "orientation": "any",
+ "background_color": "#0d111b",
+ "theme_color": "#0d111b",
+ "categories": [
+  "education",
+  "productivity"
+ ],
+ "icons": [
+  {
+   "src": "icon.svg",
+   "sizes": "any",
+   "type": "image/svg+xml",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ],
+ "shortcuts": [
+  {
+   "name": "Ask Axi",
+   "short_name": "Ask Axi",
+   "url": "./?ask=what%20should%20I%20study",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Question Bank",
+   "url": "./#/qb",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Practice Test",
+   "url": "./#/mock",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  }
+ ]
+}
