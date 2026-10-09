@@ -1,0 +1,12 @@
+{
+  "name": "axiom-prep",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AXIOM — SAT Math app with a secure serverless backend (auth, database, Axilotti AI proxy, admin panel, Telegram alerts).",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "gen-admin-hash": "node scripts/gen-admin-hash.js"
+  }
+}

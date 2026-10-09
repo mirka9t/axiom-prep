@@ -2,3 +2,8 @@
 node_modules/
 .vercel
 *.log
+
+# Secrets — never commit. These live only in Vercel env vars / local dev.
+.env
+.env.local
+.env.*.local
