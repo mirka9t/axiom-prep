@@ -76,8 +76,17 @@ function sendFile(res, abs) {
 function runApi(req, res) {
   const pathname = req.url.split('?')[0]; // e.g. /api/auth/login
   const rel = pathname.replace(/^\/api\//, '').replace(/\/+$/, '');
-  if (!rel || rel.includes('..') || rel.startsWith('_')) { res.statusCode = 404; res.end('{"error":"not_found"}'); return; }
-  const file = path.join(ROOT, 'api', rel + '.js');
+  // Block traversal and underscore-prefixed files/segments (helpers, like Vercel).
+  if (!rel || rel.includes('..') || rel.split('/').some((s) => s.startsWith('_'))) {
+    res.statusCode = 404; res.setHeader('Content-Type', 'application/json'); res.end('{"error":"not_found"}'); return;
+  }
+  let file = path.join(ROOT, 'api', rel + '.js');
+  if (!fs.existsSync(file)) {
+    // Fall back to a dynamic [action].js route in the same folder (Vercel-style).
+    const dir = path.dirname(rel);
+    const dyn = path.join(ROOT, 'api', dir === '.' ? '' : dir, '[action].js');
+    if (dir !== '.' && fs.existsSync(dyn)) file = dyn;
+  }
   if (!fs.existsSync(file)) {
     res.statusCode = 404; res.setHeader('Content-Type', 'application/json'); res.end('{"error":"not_found"}'); return;
   }
