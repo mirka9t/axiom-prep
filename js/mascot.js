@@ -73,7 +73,7 @@ var _axSr=showResults;showResults=function(){var R=RUN;_axSr();if(!R||S.axiOff)r
 
 /* Today: Axi greets you */
 function axiMessage(){var nl=0;UNITS.forEach(function(u){u.lessons.forEach(function(l){if(S.lessons[u.id+"/"+l.id])nl++})});var mis=(S.mistakes||[]).length,h=new Date().getHours(),nm=(S.profile&&S.profile.name)||"";
-  if(!nl)return "Hi"+(nm?" "+nm:"")+"! I'm Axi. Let's start with Step 1 together — one lesson at a time.";
+  if(!nl)return "Hi"+(nm?" "+nm:"")+"! I'm Axilotti. Let's start with Step 1 together — one lesson at a time.";
   if(S.streak&&S.streak.c>=2)return "Day "+S.streak.c+" of your streak! Let's keep the fire going today.";
   if(mis>=3)return "You have "+mis+" mistakes waiting in Review. Fixing them is the fastest way to raise your score!";
   if(h>=22||h<5)return "It's late! A short review now, then sleep — sleep is when memory gets saved.";

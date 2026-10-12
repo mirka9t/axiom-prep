@@ -2,7 +2,7 @@
  "id": "./",
  "name": "AXIOM — SAT Math",
  "short_name": "AXIOM",
- "description": "SAT Math from 0 to 800: plain-language lessons, practice and Axi, a study buddy that solves every step. Works offline.",
+ "description": "SAT Math from 0 to 800: plain-language lessons, practice and Axilotti, an AI study buddy that solves every step and explains your mistakes.",
  "lang": "en",
  "dir": "ltr",
  "start_url": "./",
@@ -47,8 +47,8 @@
  ],
  "shortcuts": [
   {
-   "name": "Ask Axi",
-   "short_name": "Ask Axi",
+   "name": "Ask Axilotti",
+   "short_name": "Ask Axilotti",
    "url": "./?ask=what%20should%20I%20study",
    "icons": [
     {

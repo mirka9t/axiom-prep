@@ -5,5 +5,7 @@ node_modules/
 
 # Secrets — never commit. These live only in Vercel env vars / local dev.
 .env
-.env.local
-.env.*.local
+.env.*
+
+# Editor
+.vscode/

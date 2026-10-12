@@ -120,7 +120,7 @@ var _markNavUI=markNav;
 markNav=function(h){_markNavUI(h);var p=h.split("/").filter(Boolean),base="/"+(p[0]||""),act=ROUTE_OF[p[0]]!=null?ROUTE_OF[p[0]]:base;
   if(p[0]==="unit"&&p[1]==="words")act="/unit/words";
   document.querySelectorAll("#snav a,#tabbar a").forEach(function(a){a.classList.toggle("on",a.getAttribute("data-r")===act)});
-  var t=TITLES[p[0]||""]||"Zero to 800";if(p[0]==="unit"||p[0]==="lesson"){var u=findUnit(p[1]);if(u)t=u.title.replace(/ \(.*\)$/,"")}
+  var t=TITLES[p[0]||""]||"AXIOM";if(p[0]==="unit"||p[0]==="lesson"){var u=findUnit(p[1]);if(u)t=u.title.replace(/ \(.*\)$/,"")}
   el("tbTitle").textContent=t;el("backBtn").hidden=!p.length;
   document.body.classList.toggle("focus",p[0]==="lesson");document.body.classList.toggle("immerse",p[0]==="run"||(p[0]==="qb"&&p[1]==="q")||p[0]==="practice"||p[0]==="quiz"||p[0]==="mock");
 };

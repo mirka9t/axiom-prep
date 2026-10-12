@@ -1,6 +1,6 @@
 /* /api/support
  *   GET  -> { messages }   the signed-in user's support thread (chronological)
- *   POST { text }          user sends a message; stored + forwarded to Telegram
+ *   POST { text }          user sends a message; stored in the support thread
  * The admin replies from the admin panel; replies appear here for the user. */
 'use strict';
 
@@ -15,8 +15,10 @@ function readThread(list) {
 module.exports = async (req, res) => {
   if (!C.methodGuard(req, res, ['GET', 'POST'])) return;
   try {
-    const user = await C.requireUser(req, res);
-    if (!user) return;
+    // Restricted users can still read and send support messages to appeal a
+    // moderation decision. Other account APIs continue to use requireUser.
+    const user = await C.sessionUser(req);
+    if (!user) return C.bad(res, 'not_signed_in', 401);
 
     if (req.method === 'GET') {
       const list = await db.lrange('support:' + user.id, 0, 199);
@@ -25,7 +27,7 @@ module.exports = async (req, res) => {
 
     if (!(await C.rateLimit(req, 'support', 20, 600))) return C.bad(res, 'too_many_requests', 429);
     const body = await C.readBody(req);
-    const text = C.clampStr((body.text || '').trim(), 2000);
+    const text = C.clampStr(typeof body.text === 'string' ? body.text.trim() : '', 2000);
     if (!text) return C.bad(res, 'empty_message');
 
     const entry = JSON.stringify({ from: 'user', text, ts: C.now() });
@@ -34,7 +36,6 @@ module.exports = async (req, res) => {
     await db.sadd('support:threads', user.id);
     await db.set('support:unread:' + user.id, '1');
 
-    C.notify(`💬 Support — ${user.name} (${user.email}):\n${text}`);
     return C.ok(res, { ok: true });
   } catch (e) {
     if (e && e.code === 'DB_NOT_CONFIGURED') return C.bad(res, 'backend_not_configured', 503);

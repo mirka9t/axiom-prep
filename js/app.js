@@ -1500,7 +1500,7 @@ function viewHome(a){
 
   '<div class="sec-h"><h2>Jump back in</h2></div>'+
   '<div class="grid g-auto">'+
-    tile("📚","All 16 units","Lessons, practice & quizzes","/units")+
+    tile("📚","All "+UNITS.length+" units","Lessons, practice & quizzes","/units")+
     tile("🃏","Flashcards","Quick memory drills","/cards/"+(next?next.id:UNITS[0].id))+
     tile("🧮","Formula sheet","Everything on one page","/formulas")+
     tile("🎯","Test strategy","Pacing, calculator, guessing","/strategy")+
@@ -1533,7 +1533,7 @@ function paintBars(){document.querySelectorAll(".bar-t i[data-w]").forEach(funct
 /* ---- ALL UNITS ---- */
 function viewUnits(a){
   a.innerHTML='<div class="crumb"><a href="#/">Home</a> › Units</div>'+
-    '<div class="sec-h"><h2>All 16 units</h2><span class="k">start at the top if you\'re new</span></div>'+
+    '<div class="sec-h"><h2>All '+UNITS.length+' units</h2><span class="k">start at the top if you\'re new</span></div>'+
     '<input class="search" id="usearch" placeholder="Search a topic… (slope, fractions, circle)">'+
     '<div class="grid g-auto" id="ulist" style="margin-top:16px">'+UNITS.map(unitCard).join("")+'</div>';
   paintBars();

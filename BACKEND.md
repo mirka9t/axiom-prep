@@ -1,57 +1,71 @@
-# AXIOM backend — setup (about 10 minutes)
+# AXIOM server setup
 
-AXIOM now has a small, secure serverless backend that runs on Vercel next to the
-static site. It powers: database-backed accounts, the Axilotti AI (Groq), the
-admin panel, Telegram alerts, progress sync, activity tracking and support chat.
+The static course and its on-device study brain work without a server. Cloud
+accounts, cross-device progress, Groq-powered Axilotti, support and moderation
+need the environment below. Deploy on Vercel so the `/api` functions run beside
+the site.
 
-**Nothing works until you set the environment variables below.** Until then the
-app automatically falls back to its old browser-only behaviour, so it never
-breaks — it just runs without the new features.
+## 1. Configure the database
 
----
+Create an Upstash Redis database and add its REST URL and token to Vercel:
 
-## 1. Create the database (Upstash Redis — free, no card)
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
 
-1. Go to <https://upstash.com> and sign up (GitHub login is fine).
-2. **Create Database** → Redis → pick a region near your users → Create.
-3. On the database page, open the **REST API** section and copy:
-   - `UPSTASH_REDIS_REST_URL`
-   - `UPSTASH_REDIS_REST_TOKEN`
+User records, one-way password hashes, sessions, progress, limited learning
+events, support threads and admin audit entries are stored there. Without these
+variables, visitors can use AXIOM as guests, but cloud sign-up and sign-in are
+unavailable.
 
-(You can also use Vercel's own "Upstash for Redis" marketplace integration — it
-sets the same two variables automatically.)
+## 2. Configure Axilotti
 
-## 2. Get your Groq key (for Axilotti)
+Create a Groq API key and store it only as `GROQ_API_KEY` in Vercel. Never put
+the key in browser JavaScript, source control, or a public `.env` file. The
+default model is `openai/gpt-oss-120b`; `GROQ_MODEL` can override it. AXIOM also
+tries `openai/gpt-oss-20b` and `qwen/qwen3.8-27b` if a model is unavailable.
 
-1. <https://console.groq.com> → **API Keys** → Create.
-2. Copy it into `GROQ_API_KEY`.
-   > ⚠️ If you ever pasted a key into a chat or committed it, **revoke it** in the
-   > Groq console and make a new one. Keys in the browser are not secret.
-3. Optional: `GROQ_MODEL` (default `openai/gpt-oss-120b`). The app also falls
-   back to `openai/gpt-oss-20b` then `qwen/qwen3.8-27b` if a model is retired.
+If a key has been pasted into a chat or committed, revoke it and create a new
+one before deployment. Groq model IDs can change; check Groq's current model
+catalog when updating them.
 
-## 3. Telegram alerts (sign-ups, activity, support)
+## 3. Optional Telegram notification
 
-1. In Telegram, message **@BotFather** → `/newbot` → copy the bot **token** into
-   `TELEGRAM_BOT_TOKEN`. (If a token was ever shared, use `/revoke` and make a new one.)
-2. **Send your bot a message first** (say "hi") — a bot can't message you until you do.
-3. Your numeric user id goes in `TELEGRAM_ADMIN_CHAT_ID` (e.g. `6325688361`).
-   Not sure of it? Message **@userinfobot**, it tells you your id.
+Create a bot with BotFather and set:
 
-Alerts are **outbound only** and **never include passwords** — only name, email,
-time, activity summaries and support messages.
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_ADMIN_CHAT_ID`
 
-## 4. Admin panel login
+The bot must be started by the recipient first. Telegram receives one generic
+new-account notification only. It never receives passwords, email addresses,
+student results, activity details or support message text. Leave both values
+unset to disable Telegram alerts.
 
-The admin password is checked on the server and never ships to the browser.
-Generate the values from your chosen password:
+## 4. Configure the administrator
+
+Set `ADMIN_USER=admin_axiom` if you want to use that sign-in name. Generate a
+unique administrator password of at least 16 characters and run:
 
 ```
-node scripts/gen-admin-hash.js "axiom_admin_123"
+node scripts/gen-admin-hash.js
 ```
 
-That prints `ADMIN_USER`, `ADMIN_PASS_SALT`, `ADMIN_PASS_HASH`. For the default
-password `axiom_admin_123` you can use these directly:
+The script prompts for it without echoing the characters and prints a random
+salt and a scrypt hash. Add the resulting `ADMIN_PASS_SALT` and
+`ADMIN_PASS_HASH` to Vercel. The plaintext password is not stored by AXIOM.
+There is no default administrator password. Do not reuse a password that has
+been shared in a chat.
+
+Open `#/admin` or sign in through the regular form with `ADMIN_USER` and the
+password you just generated. The admin UI is not linked in the public
+navigation, and every admin API checks the server-side admin session.
+
+**Admin login works even before the database is configured** — the admin
+session is a signed token (HMAC of `ADMIN_PASS_HASH`), so you can reach the
+panel with just the three `ADMIN_*` variables. The database is still needed for
+the panel to list users, progress and support.
+
+To use the default password `axiom_admin_123` exactly (the generator asks for
+16+ characters), paste these precomputed values instead of running the script:
 
 ```
 ADMIN_USER=admin_axiom
@@ -59,54 +73,80 @@ ADMIN_PASS_SALT=9b6cb56f3014cca9b73e8946d9b701cf
 ADMIN_PASS_HASH=6e9c4e65ab89117d6c3bdf7f1e1b8ae515b778ec7665fbaa20e84a587381acbf7a2ffd0a7b29450eda1416f69c4456886d5d6aaf9f63bed5bac1f06c07aa81d2
 ```
 
-> **Change this password before you go live.** Re-run the command with a strong
-> password and replace the salt/hash. There is no visible admin link: open the
-> panel by signing in on the normal login form with the admin username/password,
-> or by visiting `#/admin`.
+Accounts sign up with a **username and a 6+ character password — no email and no
+verification**. Change the admin password before launch if this app is public.
 
-## 5. Put the variables into Vercel
+## 5. Add variables to Vercel
 
-Vercel → your project → **Settings → Environment Variables**. Add each one for
-**Production** (and Preview if you want). Then **redeploy**.
+In **Project → Settings → Environment Variables**, add the required variables
+for Production (and Preview if needed), then redeploy.
 
-| Variable | What it is |
-| --- | --- |
-| `UPSTASH_REDIS_REST_URL` | Upstash REST URL |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash REST token |
-| `GROQ_API_KEY` | Groq API key (Axilotti) |
-| `GROQ_MODEL` | *(optional)* model id |
-| `TELEGRAM_BOT_TOKEN` | BotFather token |
-| `TELEGRAM_ADMIN_CHAT_ID` | your Telegram user id |
-| `ADMIN_USER` | admin login name |
-| `ADMIN_PASS_SALT` | from the generator |
-| `ADMIN_PASS_HASH` | from the generator |
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `UPSTASH_REDIS_REST_URL` | Yes | Database endpoint |
+| `UPSTASH_REDIS_REST_TOKEN` | Yes | Database secret |
+| `GROQ_API_KEY` | For cloud AI | Server-side Axilotti key |
+| `GROQ_MODEL` | No | Model override |
+| `ADMIN_USER` | For admin | Administrator sign-in name |
+| `ADMIN_PASS_SALT` | For admin | Generated password salt |
+| `ADMIN_PASS_HASH` | For admin | Generated password hash |
+| `TELEGRAM_BOT_TOKEN` | No | Optional generic notification |
+| `TELEGRAM_ADMIN_CHAT_ID` | No | Optional notification recipient |
 
-**Never commit these.** They live only in Vercel. `.env*` is git-ignored.
+Never commit these values. `.env*` is git-ignored. For local development use
+`vercel dev` and a private `.env.local` file — or the bundled dev server below.
 
----
+## Run and test locally (no database needed)
 
-## Local development
+The repo ships a zero-dependency local server so you can try everything —
+accounts, admin panel, Axilotti AI and support — before deploying:
 
 ```
-npm i -g vercel
-vercel dev
+node dev-server.js        # then open http://localhost:3000
 ```
 
-Create a `.env.local` with the same variables (git-ignored) for local testing.
+- With **no Upstash** configured it uses an in-memory database (data resets when
+  you stop the server). This is dev-only; production always needs a real
+  database.
+- Put secrets in a private `.env.local` next to `dev-server.js`:
 
-## How it stays safe
+  ```
+  GROQ_API_KEY=your-groq-key
+  ADMIN_USER=admin_axiom
+  ADMIN_PASS_SALT=...        # from: node scripts/gen-admin-hash.js
+  ADMIN_PASS_HASH=...
+  TELEGRAM_BOT_TOKEN=...     # optional
+  TELEGRAM_ADMIN_CHAT_ID=... # optional
+  ```
 
-- Passwords are hashed with **scrypt** + a per-user salt and are never stored or
-  sent in readable form. Forgotten passwords are reset, never retrieved.
-- Sessions are random tokens in **HttpOnly, Secure, SameSite=Lax** cookies —
-  not readable by page scripts.
-- The Groq key, Telegram token and admin password stay **server-side only**.
-- Auth, AI and support endpoints are **rate-limited**; the AI/Telegram keys are
-  never exposed to the browser.
-- Banning a user **revokes their active sessions** immediately.
+- With `GROQ_API_KEY` set, Axilotti answers through Groq. Without it, Axilotti
+  automatically uses the on-device study brain. Sign in with your `ADMIN_USER`
+  and password to open `#/admin`.
 
-## The API (all under `/api`)
+Opening `index.html` directly as a file (no server) cannot run `/api`, so
+accounts/admin/AI stay off and the app runs in guest mode — always use the dev
+server or a deployment to test the cloud features.
+
+## Data and access notes
+
+- Passwords use salted scrypt hashes. Passwords cannot be retrieved or sent to
+  Telegram.
+- User sessions use random `HttpOnly`, `SameSite=Lax` cookies; production
+  cookies are `Secure`.
+- Progress stays in the learner's account and is also cached in that browser
+  for the app's local behavior. The service worker does not cache `/api`
+  responses.
+- Admin access shows account metadata, study summaries, recent lesson/quiz
+  events and user-initiated support threads. It does not expose password hashes
+  or private notes. Moderation actions and support replies are audited.
+- Axilotti requests send the learner's submitted message and recent relevant
+  chat/lesson/mistake context to Groq. Chat history stays in browser storage and
+  is not written to the AXIOM database.
+- Telegram alerts are generic only. Learning events and support messages never
+  go to Telegram.
+
+## API routes
 
 `auth/register`, `auth/login`, `auth/logout`, `auth/me`, `progress`, `ai`,
-`activity`, `support`, and admin-only: `admin/me`, `admin/users`, `admin/user`,
-`admin/ban`, `admin/support`.
+`activity`, `support`; admin-only: `admin/me`, `admin/users`, `admin/user`,
+`admin/ban`, `admin/support`, and `admin/audit`.

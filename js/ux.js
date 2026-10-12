@@ -88,7 +88,7 @@ function helpOpen(){var ru=S.uiLang==="ru";
 /* ---------- Course: one clear ordered path ---------- */
 viewUnits=function(a){
   var curId=null;for(var i=0;i<UNITS.length;i++){if(unitPct(UNITS[i])<100){curId=UNITS[i].id;break}}
-  a.innerHTML='<section class="learn"><div class="pg-h"><div><h1>Course</h1><p>'+UNITS.length+' steps · '+lessonsTotal()+' lessons. Go in order from Step 1 — each step builds on the one before. Tap a step to see its lessons.</p></div><div class="srch">'+ic("search")+'<input id="lsearch" placeholder="Find a topic: fractions, equations, circles…"></div></div><div class="cpath" id="cpath"></div></section>';
+  a.innerHTML='<section class="learn"><div class="pg-h"><div><h1>Course</h1><p>'+UNITS.length+' steps · '+lessonsTotal()+' lessons. Start with numbers, fractions and ratios, then move into algebra, advanced math and geometry. Search or jump to any lesson.</p></div><div class="srch">'+ic("search")+'<input id="lsearch" placeholder="Find a topic: fractions, equations, circles…"></div></div><div class="cpath" id="cpath"></div></section>';
   function draw(q){q=(q||"").toLowerCase();el("cpath").innerHTML=UNITS.map(function(u,i){
     var hay=(u.title+" "+u.tag+" "+u.lessons.map(function(l){return l.t+" "+subtopics(l).join(" ")}).join(" ")).toLowerCase();if(q&&hay.indexOf(q)<0)return "";
     var pc=unitPct(u),D=domainOf(u.id),cur=u.id===curId;
@@ -121,7 +121,7 @@ function pdfStatic(html){var t=document.createElement("div");t.innerHTML=html;
     d.innerHTML='<b>Try it:</b> '+(qq?qq.innerHTML:"")+'<div class="pd-ans">Answer: '+esc((q.getAttribute("data-a")||"").split("|")[0])+' — '+esc(q.getAttribute("data-s")||"")+'</div>';q.parentNode.replaceChild(d,q)});
   t.querySelectorAll("button,.row,input,.ldots").forEach(function(b){b.remove()});return t.innerHTML}
 function pdfDoc(title,sub,body){var pa=el("printArea");if(!pa){pa=document.createElement("div");pa.id="printArea";document.body.appendChild(pa)}
-  pa.innerHTML='<div class="pd-head"><div class="pd-logo">∑</div><div><div class="pd-brand">Zero to 800 · SAT Math</div><h1>'+esc(title)+'</h1><p>'+esc(sub)+'</p></div></div>'+body+'<div class="pd-foot">Zero to 800 · '+new Date().toLocaleDateString()+'</div>';
+  pa.innerHTML='<div class="pd-head"><div class="pd-logo">∑</div><div><div class="pd-brand">AXIOM · SAT Math</div><h1>'+esc(title)+'</h1><p>'+esc(sub)+'</p></div></div>'+body+'<div class="pd-foot">AXIOM · '+new Date().toLocaleDateString()+'</div>';
   document.body.classList.add("printing");
   toast(S.uiLang==="ru"?"В окне печати выберите «Сохранить как PDF»":"In the print window, choose “Save as PDF” as the printer");
   setTimeout(function(){try{window.print()}catch(e){toast("Printing isn't allowed in this preview — open your own site version")}setTimeout(function(){document.body.classList.remove("printing")},1500)},350)}
@@ -172,7 +172,7 @@ function renderAcct(){var b=el("acct");if(!b)return;var u=AUTH.user;
 function legacyInfo(){try{var raw=localStorage.getItem("z800");if(!raw)return null;var d=JSON.parse(raw);return d&&d.xp>0?{xp:d.xp,lvl:1+Math.floor(d.xp/120),raw:raw}:null}catch(e){return null}}
 function accGate(mode){mode=mode||"in";var g=el("gate");if(!g){g=document.createElement("div");g.id="gate";document.body.appendChild(g)}
   var us=accUsers(),names=Object.keys(us),legacy=window.Z800_USER?null:legacyInfo(),up=mode==="up";
-  g.innerHTML='<div class="gate-card"><div class="gate-brand"><span class="logo-m">∑</span><div><b>Zero to 800</b><small>SAT Math · study room</small></div></div>'+
+  g.innerHTML='<div class="gate-card"><div class="gate-brand"><span class="logo-m">∑</span><div><b>AXIOM</b><small>SAT Math · study room</small></div></div>'+
    '<h1>'+(up?"Create your account":"Welcome back")+'</h1><p class="muted">'+(up?"Your own space: lessons, progress, notes and streaks.":"Sign in to continue your progress.")+'</p>'+
    (!up&&names.length?'<div class="gate-users">'+names.map(function(n){return '<button class="gu" data-u="'+esc(n)+'"><span class="av">'+esc((us[n].name||n).charAt(0).toUpperCase())+'</span><span>'+esc(us[n].name||n)+'<small>@'+esc(n)+'</small></span></button>'}).join("")+'</div>':'')+
    '<div class="seg auth-seg"><button class="'+(!up?"on":"")+'" id="gIn">Sign in</button><button class="'+(up?"on":"")+'" id="gUp">Create account</button></div>'+

@@ -12,7 +12,7 @@ var _qv3=qvShow;qvShow=function(p,ok){_qv3(p,ok);if(ok===false){var r=el("qvRes"
 /* ---------- backup files ---------- */
 function backupDownload(){var data=JSON.stringify(S),name="zero-to-800-backup-"+dayStr()+".json";
   try{var b=new Blob([data],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);toast("Backup file saved")}catch(e){toast("Download not available here — use the backup code instead")}}
-function backupImport(input){var f=input.files&&input.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);if(typeof o.xp!=="number")throw 0;if(!confirm("Replace your current progress with this backup (level "+(1+Math.floor(o.xp/120))+")?"))return;for(var k in o)S[k]=o[k];saveS();toast("Progress restored ✓");router()}catch(e){toast("That file isn't a Zero to 800 backup")}};r.readAsText(f)}
+function backupImport(input){var f=input.files&&input.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);if(typeof o.xp!=="number")throw 0;if(!confirm("Replace your current progress with this backup (level "+(1+Math.floor(o.xp/120))+")?"))return;for(var k in o)S[k]=o[k];saveS();toast("Progress restored ✓");router()}catch(e){toast("That file isn't an AXIOM backup")}};r.readAsText(f)}
 
 /* ---------- Progress: mistake coach + backup files ---------- */
 var _vp3=viewProgress;viewProgress=function(a){_vp3(a);var tot=0;WHY.forEach(function(w){tot+=S.why[w[0]]||0});

@@ -1,29 +1,46 @@
 #!/usr/bin/env node
-/* Generate ADMIN_PASS_SALT and ADMIN_PASS_HASH for the admin panel.
- *
- * Usage:
- *   node scripts/gen-admin-hash.js "your-admin-password"
- *
- * Paste the printed lines into your Vercel Environment Variables (never commit
- * them). The plaintext password is never stored anywhere — only this hash.
- * Must use the SAME scrypt parameters as api/_lib/core.js. */
+/* Prompt privately for the AXIOM administrator password and generate its scrypt hash. */
 'use strict';
 
 const crypto = require('crypto');
 
-const password = process.argv[2];
-if (!password) {
-  console.error('Usage: node scripts/gen-admin-hash.js "your-admin-password"');
+if (!process.stdin.isTTY || !process.stdout.isTTY) {
+  console.error('Run this from a terminal so the password can be entered without echo.');
   process.exit(1);
 }
 
-const salt = crypto.randomBytes(16).toString('hex');
-crypto.scrypt(String(password), salt, 64, { N: 16384, r: 8, p: 1 }, (err, dk) => {
-  if (err) { console.error(err); process.exit(1); }
-  const hash = dk.toString('hex');
-  console.log('\nAdd these to your Vercel Environment Variables:\n');
-  console.log('ADMIN_USER=admin_axiom');
-  console.log('ADMIN_PASS_SALT=' + salt);
-  console.log('ADMIN_PASS_HASH=' + hash);
-  console.log('\n(ADMIN_USER can be anything you like — this is what you type in the login box.)');
+const stdin = process.stdin;
+const stdout = process.stdout;
+stdout.write('New administrator password (16+ characters): ');
+stdin.setRawMode(true);
+stdin.resume();
+stdin.setEncoding('utf8');
+
+let password = '';
+function finish() {
+  stdin.setRawMode(false);
+  stdin.pause();
+  stdout.write('\n');
+  if (password.length < 16) {
+    console.error('Use a unique password with at least 16 characters.');
+    process.exit(1);
+  }
+  const salt = crypto.randomBytes(16).toString('hex');
+  crypto.scrypt(password, salt, 64, { N: 16384, r: 8, p: 1 }, (err, key) => {
+    password = '';
+    if (err) { console.error('Could not generate the password hash.'); process.exit(1); }
+    console.log('Add these values to the server environment (Vercel):');
+    console.log('ADMIN_PASS_SALT=' + salt);
+    console.log('ADMIN_PASS_HASH=' + key.toString('hex'));
+    console.log('Set ADMIN_USER=admin_axiom separately if desired.');
+  });
+}
+
+stdin.on('data', (chunk) => {
+  for (const ch of chunk) {
+    if (ch === '\u0003') { stdout.write('\n'); process.exit(130); }
+    if (ch === '\r' || ch === '\n') { finish(); return; }
+    if (ch === '\u007f' || ch === '\b') password = password.slice(0, -1);
+    else if (ch >= ' ') password += ch;
+  }
 });

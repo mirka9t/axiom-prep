@@ -186,7 +186,7 @@ viewUnits=function(a){_viewUnits(a);var h=a.querySelector(".sec-h h2");if(h)h.te
 
 /* ---------- onboarding ---------- */
 function onboard(edit){if(document.querySelector(".modal.ob"))return;var p=S.profile||{};
-  var m=modal('<div class="big-em">👋</div><h2>'+(edit?"Your details":"Welcome to Zero to 800")+'</h2><p class="muted">Three quick questions so the app can plan with you. You can change them anytime in Progress.</p>'+
+  var m=modal('<div class="big-em">👋</div><h2>'+(edit?"Your details":"Welcome to AXIOM")+'</h2><p class="muted">Three quick questions so the app can plan with you. You can change them anytime in Progress.</p>'+
    '<label class="fl">What should I call you?<input id="obName" value="'+esc(p.name||"")+'" placeholder="your name"></label>'+
    '<label class="fl">When is your SAT?<input id="obDate" type="date" value="'+esc(p.date||"")+'"></label>'+
    '<label class="fl">Your target math score<select id="obTarget">'+[650,700,750,800].map(function(v){return '<option'+((p.target||800)===v?" selected":"")+'>'+v+'</option>'}).join("")+'</select></label>'+

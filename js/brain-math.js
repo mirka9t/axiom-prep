@@ -418,7 +418,7 @@ function factor(str){var n=parse(str),p=toPoly(n);if(!p)return null;var vs=pvars
   if(!f)f=factorMore(q,s);
   var whole=(pre||"")+(f?f:(pre?"("+inner+")":inner));out.answer=whole;out.factored=!!(f||pre);if(!out.factored)out.note="This doesn't factor over the whole numbers — it's already as simple as it gets.";return out}
 /* more factoring: difference of squares of any even power, x⁴-type quadratics, and two-letter trinomials */
-function sqrtPoly(A){/* a·v^(2k) with a a perfect square → √ as a polynomial, else null */var ks=Object.keys(A);if(ks.length!==1)return null;var c=A[ks[0]];if(c.n<0)return null;var r=sqrtF(c);if(!r)return null;var m=mono(ks[0]),h={};for(var v in m){if(m[v]%2)return null;h[v]=m[v]/2}var o={};o[mkey(h)]=r;return o}
+function sqrtPoly(A){/* a·v^(2k) with a a perfect square -> sqrt as a polynomial, else null */var ks=Object.keys(A);if(ks.length!==1)return null;var c=A[ks[0]];if(c.n<0)return null;var r=sqrtF(c);if(!r)return null;var m=mono(ks[0]),h={};for(var v in m){if(m[v]%2)return null;h[v]=m[v]/2}var o={};o[mkey(h)]=r;return o}
 function factorMore(q,s){var ks=Object.keys(q);
   if(ks.length===2){var pos={},negp={};ks.forEach(function(k){if(q[k].n>0)pos[k]=q[k];else negp[k]=fneg(q[k])});if(Object.keys(pos).length===1&&Object.keys(negp).length===1){var a=sqrtPoly(pos),b=sqrtPoly(negp);
     if(a&&b){var A1=pmx(psub(a,b)),B1=pmx(padd(a,b));s.push(St("("+A1+")("+B1+")","It's a **difference of squares**: a² − b² = (a − b)(a + b), with a = "+pmx(a)+", b = "+pmx(b)+"."));

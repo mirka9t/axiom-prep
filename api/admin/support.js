@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
         try { last = raw[0] ? JSON.parse(raw[0]) : null; } catch (_) { last = null; }
         const unread = await db.get('support:unread:' + uid);
         threads.push({
-          userId: uid, name: u.name, email: u.email,
+          userId: uid, name: u.name, username: u.username || u.email || '',
           lastText: last ? last.text : '', lastFrom: last ? last.from : '', lastTs: last ? last.ts : 0,
           unread: unread === '1',
         });
@@ -42,8 +42,8 @@ module.exports = async (req, res) => {
 
     // POST — admin reply
     const body = await C.readBody(req);
-    const userId = C.clampStr((body.userId || '').trim(), 64);
-    const text = C.clampStr((body.text || '').trim(), 2000);
+    const userId = C.clampStr(typeof body.userId === 'string' ? body.userId.trim() : '', 64);
+    const text = C.clampStr(typeof body.text === 'string' ? body.text.trim() : '', 2000);
     if (!userId || !text) return C.bad(res, 'bad_request');
     const u = await db.getJSON('user:' + userId);
     if (!u) return C.bad(res, 'not_found', 404);
@@ -53,6 +53,7 @@ module.exports = async (req, res) => {
     await db.ltrim('support:' + userId, 0, 199);
     await db.sadd('support:threads', userId);
     await db.del('support:unread:' + userId);
+    await C.adminAudit('support_reply', userId);
     return C.ok(res, { ok: true });
   } catch (e) {
     if (e && e.code === 'DB_NOT_CONFIGURED') return C.bad(res, 'backend_not_configured', 503);

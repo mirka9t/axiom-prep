@@ -136,7 +136,7 @@ function axiHush(){var t=TK;TK=null;if(t){try{t.p&&t.p.stop()}catch(e){}}MOUTH.o
 /* speak automatically only if the learner wants it; otherwise Axi still mouths the words silently */
 function axiAuto(text,o){if(S.axiOff)return null;o=o||{};if(!S.voice.auto)o.mode="silent";return axiSay(text,o)}
 function axiTest(){VG=true;var d=document.querySelector(".modal.settings .vtest .axi")||document.querySelector("#axiBuddy .axi");
-  axiSay(L2("Hi! I'm Axi. This is how I sound. Two plus two equals four!","Привет! Я Акси. Вот так я говорю. Два плюс два — четыре!"),{axi:d,bubble:document.querySelector(".modal.settings .vtest-t"),force:1})}
+  axiSay(L2("Hi! I'm Axilotti. This is how I sound. Two plus two equals four!","Привет! Я Аксилотти. Вот так я говорю. Два плюс два — четыре!"),{axi:d,bubble:document.querySelector(".modal.settings .vtest-t"),force:1})}
 
 /* ---------- the read-aloud dock ---------- */
 var RD=null;

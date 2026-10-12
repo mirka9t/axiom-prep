@@ -6,7 +6,7 @@ AXV="2.1";
 /* ---------------- intro ---------------- */
 var INTRO_KEY="axiom_intro_v1";
 var INTRO_T={en:{skip:"Skip",next:"Next",back:"Back",go:"Let's go!",
-  s:[["cheer","Hi! I'm Axi.","I'm an axolotl — the animal that can regrow what it loses. That's the idea behind AXIOM: every mistake you make is data that helps your maths grow back stronger."],
+  s:[["cheer","Hi! I'm Axilotti.","I'm an axolotl — the animal that can regrow what it loses. That's the idea behind AXIOM: every mistake you make is data that helps your maths grow back stronger."],
      ["happy","Welcome to AXIOM","Your SAT Math coach — from zero to 800. Every rule is built from first principles, so you understand why it works instead of just memorising it."],
      ["happy","How you'll learn",""],
      ["happy","Your toolbox","A graphing calculator with a math keypad, a calculator, the SAT reference sheet and a scratchpad. Open them from Tools and drag them anywhere on the screen."],
@@ -15,7 +15,7 @@ var INTRO_T={en:{skip:"Skip",next:"Next",back:"Back",go:"Let's go!",
   how:[["bookOpen","Learn","Short lesson pages with step-by-step examples and sliders to play with."],["pen","Practice","Unlimited questions. After a mistake you see why each answer is right or wrong."],["repeat","Review","Flashcards and your own mistakes come back until they stick."],["target","Test","A diagnostic builds your plan; practice tests track your score."]],
   tools:[["graph","Graphing"],["calc","Calculator"],["sigma","Formulas"],["draw","Scratchpad"]],chips:["units","lessons","question types","unlimited practice"]},
  ru:{skip:"Пропустить",next:"Далее",back:"Назад",go:"Поехали!",
-  s:[["cheer","Привет! Я Акси.","Я аксолотль — животное, которое умеет восстанавливать то, что потеряло. В этом идея AXIOM: каждая ошибка — это данные, которые помогают твоей математике стать сильнее."],
+  s:[["cheer","Привет! Я Аксилотти.","Я аксолотль — животное, которое умеет восстанавливать то, что потеряло. В этом идея AXIOM: каждая ошибка — это данные, которые помогают твоей математике стать сильнее."],
      ["happy","Добро пожаловать в AXIOM","Твой тренер по математике SAT — с нуля до 800. Каждое правило объясняется с самых основ, чтобы ты понимал, почему оно работает, а не просто запоминал."],
      ["happy","Как ты будешь учиться",""],
      ["happy","Твои инструменты","Графический калькулятор с математической клавиатурой, калькулятор, справочный лист SAT и черновик. Открывай их в «Инструментах» и перетаскивай куда угодно."],

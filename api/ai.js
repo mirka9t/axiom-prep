@@ -5,10 +5,11 @@
  * Groq errors, returns a non-2xx so the client can fall back to the local
  * (offline) brain.
  *
- * Axi's persona: "Axilotti" — a friendly axolotl SAT-Math tutor. */
+ * Axilotti is the friendly SAT Math tutor persona. */
 'use strict';
 
 const C = require('./_lib/core');
+const db = require('./_lib/db');
 
 // Default to a model confirmed live on Groq. If Groq retires it later, the
 // handler automatically falls through to the next one in this list.
@@ -35,7 +36,8 @@ function modeHint(mode, ctx) {
       + (ctx.problem ? `Question: ${String(ctx.problem).slice(0, 1500)} ` : '')
       + (ctx.yourAnswer != null ? `Their answer: ${String(ctx.yourAnswer).slice(0, 300)} ` : '')
       + (ctx.correctAnswer != null ? `Correct answer: ${String(ctx.correctAnswer).slice(0, 300)} ` : '')
-      + (ctx.topic ? `Topic: ${String(ctx.topic).slice(0, 120)}.` : '');
+      + (ctx.topic ? `Topic: ${String(ctx.topic).slice(0, 120)}. ` : '')
+      + (ctx.explanation ? `Existing worked explanation: ${String(ctx.explanation).slice(0, 1200)}` : '');
   }
   if (mode === 'explain') {
     return 'Explain the following SAT Math idea from scratch, simply, with one tiny worked example. '
@@ -66,12 +68,16 @@ module.exports = async (req, res) => {
   if (!process.env.GROQ_API_KEY) {
     return C.sendJSON(res, 503, { error: 'ai_unavailable', fallback: true });
   }
+  if (!db.configured()) {
+    return C.sendJSON(res, 503, { error: 'ai_rate_limit_unavailable', fallback: true });
+  }
 
   try {
     // Logged-in users get a higher ceiling; everyone is rate-limited to protect the key.
     const user = await C.sessionUser(req).catch(() => null);
+    if (user && user.banned) return C.sendJSON(res, 403, { error: 'banned' });
     const limit = user ? 60 : 20;
-    if (!(await C.rateLimit(req, 'ai', limit, 600))) {
+    if (!(await C.rateLimit(req, 'ai', limit, 600, true))) {
       return C.sendJSON(res, 429, { error: 'too_many_requests', fallback: true });
     }
 

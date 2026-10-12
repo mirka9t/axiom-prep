@@ -1,5 +1,5 @@
 /* =====================================================================
-   AXIOM — talk to Axi
+   AXIOM — talk to Axilotti
    A real chat with Axi's offline brain: type (or say) anything —
    a problem, a topic, "quiz me", "what should I study?" — and Axi
    answers step by step, with typeset maths, voice and buttons.
@@ -23,7 +23,7 @@ if(S.voice&&S.voice.chatSpeak===undefined)S.voice.chatSpeak=true;
 function chatOpen(prefill,send){if(AXC.open){if(prefill!==undefined){var i=el("axcIn");i.value=prefill;if(send)chatSend();else i.focus()}return}
   if(typeof tipClose==="function")tipClose();VG=true;AXC.open=true;var p=document.createElement("div");p.id="axiChat";p.className="axc";p.setAttribute("role","dialog");p.setAttribute("aria-label","Chat with Axi");
   var rec=!!(window.SpeechRecognition||window.webkitSpeechRecognition);
-  p.innerHTML='<div class="axc-h"><div class="axc-av" id="axcAv">'+AXI("happy",46,"axi-live")+'</div><div class="axc-who"><b>Axi</b><small><i class="axc-dot"></i>'+L2("Offline brain · knows every lesson","Офлайн-мозг · знает все уроки")+'</small></div>'+
+  p.innerHTML='<div class="axc-h"><div class="axc-av" id="axcAv">'+AXI("happy",46,"axi-live")+'</div><div class="axc-who"><b>Axilotti</b><small><i class="axc-dot"></i>'+L2("Your SAT Math tutor","Твой помощник по математике SAT")+'</small></div>'+ 
     '<button class="axc-hb'+(S.voice.chatSpeak?" on":"")+'" id="axcSpk" title="'+L2("Read answers aloud","Читать ответы вслух")+'" onclick="chatSpeakToggle()">'+ic("speak")+'</button>'+
     '<button class="axc-hb" title="'+L2("More","Ещё")+'" onclick="chatToolsToggle()">'+ic("dots")+'</button><button class="axc-hb" title="'+L2("Close","Закрыть")+' (Esc)" onclick="chatClose()">'+ic("x")+'</button></div>'+
     '<div class="axc-tools" id="axcTools" hidden><div class="axc-tg">'+[["compass",L2("Tour","Тур"),"tourStart(0)"],["search",L2("Search","Поиск"),"searchOpen()"],["graph",L2("Graphing","График"),"graphOpen()"],["calc",L2("Calculator","Калькулятор"),"calcOpen()"],["sparkles",L2("Meet Axi","Знакомство"),"introOpen()"],["settings",L2("Settings","Настройки"),"settingsOpen()"],["trash",L2("Clear chat","Очистить"),"chatClear()"]].map(function(a){return '<button data-act="'+a[2]+'">'+ic(a[0])+'<span>'+a[1]+'</span></button>'}).join("")+'</div>'+
@@ -51,7 +51,7 @@ function chatAdd(f,h,raw){var b=el("axcBody");if(!b)return null;b.insertAdjacent
   if(f==="ai"&&typeof glossify==="function"){try{glossify(m.querySelector(".axm-b"))}catch(e){}}
   chatScroll(m);return m}
 function chatScroll(m){var b=el("axcBody");if(!b)return;var top=m&&m.offsetHeight>b.clientHeight*0.8?m.offsetTop-12:b.scrollHeight;if(b.scrollTo)b.scrollTo({top:top,behavior:"smooth"});else b.scrollTop=top}
-function chatWelcome(){var c=typeof axiCoach==="function"?axiCoach():null,nm=(S.profile&&S.profile.name)||"",h=AXC.hist.length?"":'<p>'+L2("Hi"+(nm?" "+esc(nm):"")+"! I'm Axi 💜 Ask me anything about SAT Math. I solve problems step by step, explain topics in plain words, quiz you, and know your progress.","Привет"+(nm?", "+esc(nm):"")+"! Я Акси 💜 Спрашивай что угодно по математике SAT. Решаю задачи по шагам, объясняю темы простыми словами, проверяю тебя и знаю твой прогресс.")+'</p>';
+function chatWelcome(){var c=typeof axiCoach==="function"?axiCoach():null,nm=(S.profile&&S.profile.name)||"",h=AXC.hist.length?"":'<p>'+L2("Hi"+(nm?" "+esc(nm):"")+"! I'm Axilotti 💜 Ask me anything about SAT Math. I solve problems step by step, explain topics in plain words, quiz you, and know your progress.","Привет"+(nm?", "+esc(nm):"")+"! Я Аксилотти 💜 Спрашивай что угодно по математике SAT. Решаю задачи по шагам, объясняю темы простыми словами, проверяю тебя и знаю твой прогресс.")+'</p>';
   if(c)h+='<div class="ax-coachline">'+ic("target")+'<span>'+esc(c.say.replace(/^(Hi|Привет)[^!]*!\s*/,""))+'</span></div>'+(c.btn?'<div class="ax-acts"><button class="ax-btn pri" data-act="'+esc(c.go)+'">'+ic(c.ic||"play")+'<span>'+esc(c.btn)+'</span></button></div>':'');
   chatAdd("ai",h);chatContextNote(true)}
 var _ctxSeen="";

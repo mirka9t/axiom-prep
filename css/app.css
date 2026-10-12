@@ -727,3 +727,27 @@ h1,h2,h3{letter-spacing:-.01em}
 .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
 .rv-i{display:flex;flex-direction:column;gap:6px;padding:20px;color:var(--ink);position:relative;transition:transform .15s}.rv-i:hover{transform:translateY(-3px)}.rv-i b{font-size:17px}.rv-i small{color:var(--ink2)}.rv-go{position:absolute;right:18px;top:22px;color:var(--ink2)}
 .study{border-radius:26px}
+
+/* ---- AXIOM cloud: scoped entrance + micro-interactions (added) ---- */
+@keyframes axGateFade{from{opacity:0}to{opacity:1}}
+@keyframes axGateRise{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes axPop{0%{transform:scale(.9);opacity:0}60%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
+#gate{animation:axGateFade .28s ease both}
+#gate .gate-card{animation:axGateRise .44s cubic-bezier(.2,.8,.2,1) both}
+.gchk{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--ink2);margin:4px 0 2px;line-height:1.5}
+.gchk input{margin-top:3px;flex:0 0 auto}
+.gate-note{display:flex;gap:7px;align-items:flex-start;font-size:11.5px;color:var(--ink2);margin-top:12px;line-height:1.5}
+.gate-note svg{flex:0 0 auto;width:14px;height:14px;opacity:.7}
+.auth-seg{margin:4px 0 14px}
+.acct-b{transition:transform .16s ease,background .16s ease}
+.acct-b:hover{transform:translateY(-1px)}
+.acct-b .av{transition:transform .16s ease}
+.acct-b:hover .av{transform:scale(1.06)}
+#syncStatus{animation:axGateFade .3s ease both}
+.legal-links a{position:relative;transition:color .15s ease}
+.legal-links a::after{content:"";position:absolute;left:0;right:100%;bottom:-3px;height:2px;background:var(--blue);transition:right .22s ease;border-radius:2px}
+.legal-links a:hover::after{right:0}
+.admin-stats span{animation:axPop .3s ease both}
+.btn.pri{transition:transform .14s ease,box-shadow .18s ease,filter .18s ease}
+.btn.pri:active{transform:translateY(1px) scale(.99)}
+@media(prefers-reduced-motion:reduce){#gate,#gate .gate-card,#syncStatus,.admin-stats span{animation:none!important}}

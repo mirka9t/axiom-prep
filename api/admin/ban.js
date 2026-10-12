@@ -11,9 +11,10 @@ module.exports = async (req, res) => {
   if (!(await C.requireAdmin(req, res))) return;
   try {
     const body = await C.readBody(req);
-    const id = C.clampStr((body.id || '').trim(), 64);
-    const banned = !!body.banned;
-    const reason = C.clampStr((body.reason || '').trim(), 300);
+    const id = C.clampStr(typeof body.id === 'string' ? body.id.trim() : '', 64);
+    if (typeof body.banned !== 'boolean') return C.bad(res, 'invalid_status');
+    const banned = body.banned;
+    const reason = C.clampStr(typeof body.reason === 'string' ? body.reason.trim() : '', 300);
     if (!id) return C.bad(res, 'no_id');
 
     const u = await db.getJSON('user:' + id);
@@ -24,7 +25,7 @@ module.exports = async (req, res) => {
     await db.setJSON('user:' + id, u);
     if (banned) await C.killUserSessions(id);
 
-    C.notify(`${banned ? '🚫 Banned' : '✅ Unbanned'}: ${u.name} (${u.email})${banned && reason ? '\nReason: ' + reason : ''}`);
+    await C.adminAudit('user_ban', id, { banned });
     return C.ok(res, { ok: true, banned });
   } catch (e) {
     if (e && e.code === 'DB_NOT_CONFIGURED') return C.bad(res, 'backend_not_configured', 503);

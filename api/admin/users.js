@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
       users.push({
         id: u.id,
         name: u.name,
-        email: u.email,
+        username: u.username || u.email || '',
         created: u.created,
         lastSeen: seen ? Number(seen) : (u.lastSeen || 0),
         banned: !!u.banned,

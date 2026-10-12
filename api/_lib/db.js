@@ -11,14 +11,21 @@
 
 const REST_URL = process.env.UPSTASH_REDIS_REST_URL || '';
 const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+const HAS_UPSTASH = Boolean(REST_URL && REST_TOKEN);
+// Local-dev convenience: when no real database is configured and we are NOT in
+// production, use an in-memory store so the whole app runs with zero setup.
+// Production always requires a real database (memory would not persist there).
+const USE_MEM = !HAS_UPSTASH && process.env.NODE_ENV !== 'production';
+const mem = USE_MEM ? require('./memdb') : null;
 
 function configured() {
-  return Boolean(REST_URL && REST_TOKEN);
+  return HAS_UPSTASH || USE_MEM;
 }
 
 /* Run one Redis command. args is an array like ['SET','k','v','EX','60']. */
 async function cmd(args) {
-  if (!configured()) {
+  if (!HAS_UPSTASH) {
+    if (USE_MEM) return mem.exec(args);
     const err = new Error('DB_NOT_CONFIGURED');
     err.code = 'DB_NOT_CONFIGURED';
     throw err;
@@ -42,7 +49,8 @@ async function cmd(args) {
 /* Run several commands in one round trip. cmds is an array of arg-arrays. */
 async function pipeline(cmds) {
   if (!cmds.length) return [];
-  if (!configured()) {
+  if (!HAS_UPSTASH) {
+    if (USE_MEM) return cmds.map((c) => mem.exec(c));
     const err = new Error('DB_NOT_CONFIGURED');
     err.code = 'DB_NOT_CONFIGURED';
     throw err;
@@ -68,6 +76,13 @@ async function set(k, v, opts) {
   const a = ['SET', k, v];
   if (opts && opts.ex) a.push('EX', String(opts.ex));
   return cmd(a);
+}
+/* Atomically claim a key. Returns true only when the key did not exist. */
+async function setNX(k, v, opts) {
+  const args = ['SET', k, v, 'NX'];
+  if (opts && opts.ex) args.push('EX', String(opts.ex));
+  const result = await cmd(args);
+  return result === 'OK';
 }
 const del = (...k) => cmd(['DEL', ...k]);
 const exists = (k) => cmd(['EXISTS', k]);
@@ -103,7 +118,7 @@ async function zrange(k, start, stop, rev) {
 
 module.exports = {
   configured, cmd, pipeline,
-  get, set, del, exists, expire, incr,
+  get, set, setNX, del, exists, expire, incr,
   getJSON, setJSON,
   lpush, ltrim, lrange, llen,
   sadd, srem, smembers, scard, sismember,

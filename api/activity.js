@@ -1,13 +1,16 @@
 /* POST /api/activity  { event, data? }
- * Records a usage event for the signed-in user (for the admin panel) and, for
- * notable events, sends a short summary to the operator's Telegram.
- * Never records passwords or secrets. */
+ * Records a small allowlisted learning event for the signed-in user. It never
+ * records passwords, messages, or secrets, and it never sends Telegram alerts. */
 'use strict';
 
 const C = require('./_lib/core');
 const db = require('./_lib/db');
 
-const NOTABLE = new Set(['lesson_done', 'test_done', 'quiz_done', 'level_up']);
+const ALLOWED = {
+  lesson_done: ['title', 'unitId', 'lessonId'],
+  test_done: ['title', 'score'],
+  quiz_done: ['title', 'score'],
+};
 
 module.exports = async (req, res) => {
   if (!C.methodGuard(req, res, ['POST'])) return;
@@ -17,24 +20,25 @@ module.exports = async (req, res) => {
     if (!(await C.rateLimit(req, 'activity', 120, 600))) return C.ok(res, { ok: true }); // silently drop floods
 
     const body = await C.readBody(req);
-    const event = C.clampStr((body.event || '').trim(), 40);
-    if (!event) return C.bad(res, 'no_event');
+    const event = C.clampStr(typeof body.event === 'string' ? body.event.trim() : '', 40);
+    if (!Object.prototype.hasOwnProperty.call(ALLOWED, event)) return C.bad(res, 'invalid_event');
     const data = body.data && typeof body.data === 'object' ? body.data : {};
-    const safeData = JSON.stringify(data).slice(0, 2000);
+    const safe = {};
+    for (const field of ALLOWED[event]) {
+      if (data[field] == null) continue;
+      if (field === 'score') {
+        const score = Number(data[field]);
+        if (Number.isFinite(score)) safe.score = Math.max(0, Math.min(800, Math.round(score)));
+      } else if (typeof data[field] === 'string') {
+        safe[field] = data[field].slice(0, field === 'title' ? 120 : 64);
+      }
+    }
 
-    const entry = JSON.stringify({ event, data: JSON.parse(safeData), ts: C.now() });
+    const entry = JSON.stringify({ event, data: safe, ts: C.now() });
     await db.lpush('activity:' + user.id, entry);
     await db.ltrim('activity:' + user.id, 0, 199);
     await db.set('seen:' + user.id, String(C.now()));
 
-    if (NOTABLE.has(event)) {
-      const d = JSON.parse(safeData);
-      const bits = [];
-      if (d.title) bits.push(String(d.title).slice(0, 120));
-      if (d.score != null) bits.push('score ' + String(d.score).slice(0, 40));
-      if (d.level != null) bits.push('level ' + String(d.level).slice(0, 20));
-      C.notify(`📊 ${user.name} (${user.email})\n${event}${bits.length ? ' — ' + bits.join(', ') : ''}`);
-    }
     return C.ok(res, { ok: true });
   } catch (e) {
     if (e && e.code === 'DB_NOT_CONFIGURED') return C.ok(res, { ok: true, offline: true });

@@ -6,6 +6,8 @@ const C = require('../_lib/core');
 module.exports = async (req, res) => {
   if (!C.methodGuard(req, res, ['POST'])) return;
   try {
+    const cookies = C.getCookies(req);
+    if (cookies.axadm) await C.adminAudit('admin_logout', 'admin').catch(() => {});
     await C.destroySession(req);
     await C.destroyAdminSession(req);
   } catch (_) { /* ignore */ }

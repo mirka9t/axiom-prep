@@ -69,7 +69,10 @@ function getCookies(req) {
     if (i < 0) return;
     const k = p.slice(0, i).trim();
     const v = p.slice(i + 1).trim();
-    if (k) out[k] = decodeURIComponent(v);
+    if (k) {
+      try { out[k] = decodeURIComponent(v); }
+      catch (_) { out[k] = v; }
+    }
   });
   return out;
 }
@@ -164,25 +167,40 @@ async function verifyAdmin(username, password) {
   const passOk = await verifyPassword(password, process.env.ADMIN_PASS_SALT, process.env.ADMIN_PASS_HASH);
   return userOk && passOk;
 }
-async function createAdminSession() {
-  const t = token();
-  await db.setJSON('adminsession:' + t, { created: now() }, { ex: ADMIN_TTL });
-  return t;
+/* Admin sessions are STATELESS signed tokens (HMAC), so admin login and the
+ * admin panel work even before a database is configured. The signing secret is
+ * the admin password hash, which only ever exists server-side. */
+function b64url(s) { return Buffer.from(s).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function adminSecret() { return process.env.ADMIN_PASS_HASH || ''; }
+function signAdmin(data) {
+  return crypto.createHmac('sha256', adminSecret()).update(data).digest('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
+function createAdminToken() {
+  const data = b64url(JSON.stringify({ exp: now() + ADMIN_TTL * 1000 }));
+  return data + '.' + signAdmin(data);
+}
+function verifyAdminToken(t) {
+  if (!t || !adminSecret()) return false;
+  const i = t.indexOf('.');
+  if (i < 0) return false;
+  const data = t.slice(0, i), sig = t.slice(i + 1);
+  const expect = signAdmin(data);
+  const a = Buffer.from(sig), b = Buffer.from(expect);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+  try {
+    const p = JSON.parse(Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString());
+    return p && typeof p.exp === 'number' && p.exp > now();
+  } catch (_) { return false; }
+}
+// Kept as an async alias so callers (login.js) need no change; no DB write.
+async function createAdminSession() { return createAdminToken(); }
+function isAdminReq(req) { return verifyAdminToken(getCookies(req).axadm); }
 async function requireAdmin(req, res) {
-  const c = getCookies(req);
-  const t = c.axadm;
-  if (t) {
-    const s = await db.getJSON('adminsession:' + t);
-    if (s) return true;
-  }
+  if (isAdminReq(req)) return true;
   sendJSON(res, 401, { error: 'admin_auth_required' });
   return false;
 }
-async function destroyAdminSession(req) {
-  const c = getCookies(req);
-  if (c.axadm) await db.del('adminsession:' + c.axadm);
-}
+async function destroyAdminSession() { /* stateless: clearing the cookie is enough */ }
 
 /* ---- rate limiting (fixed window via Redis INCR) ------------------- */
 function clientIp(req) {
@@ -192,21 +210,24 @@ function clientIp(req) {
 }
 /* Returns true if the request is allowed, false if the limit is exceeded.
  * Fails OPEN if the DB is unavailable (never locks real users out). */
-async function rateLimit(req, name, max, windowSec) {
+async function rateLimit(req, name, max, windowSec, failClosed) {
   try {
     const key = 'rl:' + name + ':' + clientIp(req);
     const n = await db.incr(key);
     if (n === 1) await db.expire(key, windowSec);
     return n <= max;
   } catch (_) {
-    return true;
+    return !failClosed;
   }
 }
 
 /* ---- validation ----------------------------------------------------- */
 const isEmail = (s) => typeof s === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && s.length <= 254;
+// Usernames: 3–20 chars, start alphanumeric, then letters/digits/._- only.
+const isUsername = (s) => typeof s === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9._-]{2,19}$/.test(s);
 const clampStr = (s, max) => (typeof s === 'string' ? s.slice(0, max) : '');
 function emailKey(email) { return 'email:' + String(email).trim().toLowerCase(); }
+function usernameKey(name) { return 'uname:' + String(name).trim().toLowerCase(); }
 
 /* ---- Telegram alerts (outbound only; never throws, never blocks) ---- */
 function tgConfigured() {
@@ -230,6 +251,18 @@ async function telegram(text) {
 /* Fire-and-forget so the user's response isn't delayed by Telegram. */
 function notify(text) { telegram(text).catch(() => {}); }
 
+/* Minimal moderation audit trail; never includes credentials or message bodies. */
+async function adminAudit(action, targetId, details) {
+  const entry = JSON.stringify({
+    action: clampStr(action, 40),
+    targetId: clampStr(targetId, 64),
+    details: details && typeof details === 'object' ? details : {},
+    ts: now(),
+  });
+  await db.lpush('admin:audit', entry);
+  await db.ltrim('admin:audit', 0, 499);
+}
+
 module.exports = {
   IS_PROD, SESSION_TTL, ADMIN_TTL,
   now, uid, token,
@@ -237,8 +270,8 @@ module.exports = {
   getCookies, setCookie, clearCookie,
   hashPassword, verifyPassword,
   createSession, killUserSessions, sessionUser, destroySession, requireUser,
-  adminConfigured, verifyAdmin, createAdminSession, requireAdmin, destroyAdminSession,
+  adminConfigured, verifyAdmin, createAdminSession, requireAdmin, destroyAdminSession, isAdminReq,
   clientIp, rateLimit,
-  isEmail, clampStr, emailKey,
-  tgConfigured, telegram, notify,
+  isEmail, isUsername, clampStr, emailKey, usernameKey,
+  tgConfigured, telegram, notify, adminAudit,
 };
