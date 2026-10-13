@@ -9,22 +9,27 @@
  */
 'use strict';
 
-const REST_URL = process.env.UPSTASH_REDIS_REST_URL || '';
-const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+// Accept whichever names the Vercel Redis/Upstash/KV integration provides.
+const REST_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_API_URL || '';
+const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || process.env.REDIS_REST_API_TOKEN || '';
 const HAS_UPSTASH = Boolean(REST_URL && REST_TOKEN);
+// Vercel Blob storage (the user's chosen database) when no Redis is set.
+const HAS_BLOB = !HAS_UPSTASH && Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+const blob = HAS_BLOB ? require('./blobdb') : null;
 // Local-dev convenience: when no real database is configured and we are NOT in
 // production, use an in-memory store so the whole app runs with zero setup.
 // Production always requires a real database (memory would not persist there).
-const USE_MEM = !HAS_UPSTASH && process.env.NODE_ENV !== 'production';
+const USE_MEM = !HAS_UPSTASH && !HAS_BLOB && process.env.NODE_ENV !== 'production';
 const mem = USE_MEM ? require('./memdb') : null;
 
 function configured() {
-  return HAS_UPSTASH || USE_MEM;
+  return HAS_UPSTASH || HAS_BLOB || USE_MEM;
 }
 
 /* Run one Redis command. args is an array like ['SET','k','v','EX','60']. */
 async function cmd(args) {
   if (!HAS_UPSTASH) {
+    if (HAS_BLOB) return blob.exec(args);
     if (USE_MEM) return mem.exec(args);
     const err = new Error('DB_NOT_CONFIGURED');
     err.code = 'DB_NOT_CONFIGURED';
@@ -50,7 +55,7 @@ async function cmd(args) {
 async function pipeline(cmds) {
   if (!cmds.length) return [];
   if (!HAS_UPSTASH) {
-    if (USE_MEM) return cmds.map((c) => mem.exec(c));
+    if (HAS_BLOB || USE_MEM) return Promise.all(cmds.map((c) => cmd(c)));
     const err = new Error('DB_NOT_CONFIGURED');
     err.code = 'DB_NOT_CONFIGURED';
     throw err;
