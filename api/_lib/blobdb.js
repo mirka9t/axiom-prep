@@ -20,7 +20,8 @@ let _mod = null; // { put, get, del } from @vercel/blob
 function mod() { if (!_mod) _mod = require('@vercel/blob'); return _mod; }
 function __setClient(c) { _mod = c; } // test seam
 
-const TOKEN = () => process.env.BLOB_READ_WRITE_TOKEN || '';
+// The SDK auto-reads BLOB_READ_WRITE_TOKEN from the environment (like Vercel's
+// own examples), so we don't pass it explicitly.
 const now = () => Date.now();
 
 function pathFor(key) {
@@ -31,7 +32,7 @@ async function readEnv(key) {
   const { get } = mod();
   let res;
   try {
-    res = await get(pathFor(key), { access: 'private', token: TOKEN() });
+    res = await get(pathFor(key), { access: 'private' });
   } catch (e) {
     // A genuine not-found may surface as an error in some SDK versions.
     if (e && (e.name === 'BlobNotFoundError' || /not.?found/i.test(String(e.message || '')))) return null;
@@ -47,13 +48,13 @@ async function readEnv(key) {
 async function writeEnv(key, env) {
   const { put } = mod();
   return put(pathFor(key), JSON.stringify(env), {
-    access: 'private', token: TOKEN(), addRandomSuffix: false,
+    access: 'private', addRandomSuffix: false,
     allowOverwrite: true, contentType: 'application/json',
   });
 }
 async function delKey(key) {
   const { del } = mod();
-  try { await del(pathFor(key), { token: TOKEN() }); } catch (_) { /* best effort */ }
+  try { await del(pathFor(key)); } catch (_) { /* best effort */ }
   return 1;
 }
 
