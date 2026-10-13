@@ -1,72 +1,59 @@
-/* AXIOM backend — a small key/value store built on Vercel Blob.
+/* AXIOM backend — a small key/value store built on Vercel Blob (PRIVATE store).
  *
  * Vercel Blob is object storage, not a database, so this adapter emulates the
  * tiny Redis subset the app uses:
  *   - each logical key -> one JSON blob at a deterministic pathname (kv/...)
  *   - values are wrapped in an envelope { t, v, exp } so we can fake TTL
  *   - lists and sets are stored as the whole array and rewritten on change
- *   - reads fetch the blob by the store's own URL (never exposed to the client)
+ *   - reads use the private `get(pathname, { access:'private' })` API and are
+ *     only ever made server-side (the client never touches the blob store)
  *
  * It implements exec(args) with the same command shape as the Redis/in-memory
- * backends, so db.js can route to it unchanged. Not atomic (Blob has no
+ * backends, so db.js routes to it unchanged. Not atomic (Blob has no
  * compare-and-set); fine for this app's low write concurrency.
  *
  * Needs env BLOB_READ_WRITE_TOKEN (set by Vercel's Blob integration).
  */
 'use strict';
 
-let _client = null;              // { put, list, del } from @vercel/blob
-function client() {
-  if (!_client) _client = require('@vercel/blob');
-  return _client;
-}
-function __setClient(c) { _client = c; } // test seam
+let _mod = null; // { put, get, del } from @vercel/blob
+function mod() { if (!_mod) _mod = require('@vercel/blob'); return _mod; }
+function __setClient(c) { _mod = c; } // test seam
 
 const TOKEN = () => process.env.BLOB_READ_WRITE_TOKEN || '';
 const now = () => Date.now();
 
-let baseUrl = null; // e.g. https://<store>.public.blob.vercel-storage.com/
-
 function pathFor(key) {
-  return 'kv/' + String(key).replace(/:/g, '/').replace(/[^a-zA-Z0-9/._-]/g, '_');
-}
-async function ensureBase() {
-  if (baseUrl) return baseUrl;
-  try {
-    const { list } = client();
-    const out = await list({ token: TOKEN(), limit: 1 });
-    const b = out && out.blobs && out.blobs[0];
-    if (b && b.url && b.pathname) baseUrl = b.url.slice(0, b.url.length - b.pathname.length);
-  } catch (_) { /* empty store or transient */ }
-  return baseUrl;
+  return 'kv/' + String(key).replace(/:/g, '/').replace(/[^a-zA-Z0-9/._-]/g, '_') + '.json';
 }
 
 async function readEnv(key) {
-  const path = pathFor(key);
-  const base = await ensureBase();
-  if (!base) return null; // nothing stored yet
+  const { get } = mod();
   let res;
-  try { res = await fetch(base + path, { cache: 'no-store' }); } catch (_) { return null; }
-  if (!res || !res.ok) return null;
-  let env;
-  try { env = JSON.parse(await res.text()); } catch (_) { return null; }
+  try {
+    res = await get(pathFor(key), { access: 'private', token: TOKEN() });
+  } catch (e) {
+    // A genuine not-found may surface as an error in some SDK versions.
+    if (e && (e.name === 'BlobNotFoundError' || /not.?found/i.test(String(e.message || '')))) return null;
+    throw e;
+  }
+  if (!res) return null;
+  let text;
+  try { text = await new Response(res.stream).text(); } catch (_) { return null; }
+  let env; try { env = JSON.parse(text); } catch (_) { return null; }
   if (env && env.exp && now() > env.exp) { try { await delKey(key); } catch (_) {} return null; }
   return env;
 }
-async function writeEnv(key, env, nx) {
-  const { put } = client();
-  const r = await put(pathFor(key), JSON.stringify(env), {
-    access: 'public', token: TOKEN(), addRandomSuffix: false,
-    allowOverwrite: !nx, contentType: 'application/json',
+async function writeEnv(key, env) {
+  const { put } = mod();
+  return put(pathFor(key), JSON.stringify(env), {
+    access: 'private', token: TOKEN(), addRandomSuffix: false,
+    allowOverwrite: true, contentType: 'application/json',
   });
-  if (r && r.url && r.pathname) baseUrl = r.url.slice(0, r.url.length - r.pathname.length);
-  return r;
 }
 async function delKey(key) {
-  const path = pathFor(key);
-  const base = await ensureBase();
-  const { del } = client();
-  try { if (base) await del(base + path, { token: TOKEN() }); } catch (_) {}
+  const { del } = mod();
+  try { await del(pathFor(key), { token: TOKEN() }); } catch (_) { /* best effort */ }
   return 1;
 }
 
@@ -79,8 +66,7 @@ async function exec(args) {
       let ex = 0, nx = false;
       for (let i = 3; i < args.length; i++) { const f = String(args[i]).toUpperCase(); if (f === 'EX') ex = Number(args[++i]) || 0; else if (f === 'NX') nx = true; }
       if (nx) { const existing = await readEnv(k); if (existing) return null; }
-      try { await writeEnv(k, { t: 's', v: String(args[2]), exp: ex ? now() + ex * 1000 : 0 }, nx); }
-      catch (e) { if (nx) return null; throw e; }
+      await writeEnv(k, { t: 's', v: String(args[2]), exp: ex ? now() + ex * 1000 : 0 });
       return 'OK';
     }
     case 'DEL': { let n = 0; for (let i = 1; i < args.length; i++) { await delKey(args[i]); n++; } return n; }
@@ -101,4 +87,4 @@ async function exec(args) {
   }
 }
 
-module.exports = { exec, __setClient, _pathFor: pathFor, _reset: () => { baseUrl = null; } };
+module.exports = { exec, __setClient, _pathFor: pathFor };
