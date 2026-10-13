@@ -539,7 +539,25 @@
       }
       if (session.banned && session.admin) { AUTH.user = null; cloudUserId = ''; window.Z800_USER = '__guest'; }
       else if (session.user) await loadCloudProgress(session.user);
-      else { checkingSession = false; if (AUTH.user && !AUTH.user.username) AUTH.user.localOnly = true; renderAcct(); if (!AUTH.user && window.Z800_USER !== '__guest' && location.hash !== '#/admin') setTimeout(function () { accGate('up'); }, 120); var choseGuest = false; try { choseGuest = sessionStorage.getItem('z800_session') === '__guest'; } catch (_) {} if (!AUTH.user && window.Z800_USER === '__guest' && !choseGuest && location.hash !== '#/admin') setTimeout(function () { accGate('up'); }, 120); if (location.hash === '#/admin') router(); }
+      else {
+        checkingSession = false;
+        if (AUTH.user && !AUTH.user.username) AUTH.user.localOnly = true;
+        renderAcct();
+        var ready = session.configured !== false; // backend able to create/verify accounts
+        if (!AUTH.user && !ready) {
+          // Backend not set up yet (no database): never block the app with a
+          // sign-in wall — just study as a guest. Sign-in stays available from
+          // the account button and starts working once the backend is ready.
+          if (window.Z800_USER !== '__guest') { window.Z800_USER = '__guest'; try { sessionStorage.setItem('z800_session', '__guest'); } catch (e) {} }
+          gateDismissed = true;
+        } else if (ready && !AUTH.user && window.Z800_USER !== '__guest' && location.hash !== '#/admin') {
+          setTimeout(function () { accGate('up'); }, 120);
+        } else if (ready && !AUTH.user && window.Z800_USER === '__guest' && location.hash !== '#/admin') {
+          var choseGuest = false; try { choseGuest = sessionStorage.getItem('z800_session') === '__guest'; } catch (_) {}
+          if (!choseGuest) setTimeout(function () { accGate('up'); }, 120);
+        }
+        if (location.hash === '#/admin') router();
+      }
     } catch (_) {
       // Backend unreachable (opened as static files, offline, or not deployed
       // with its functions). Run smoothly as a guest instead of showing a

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -m 12 https://__TRACKED_VAR__/)",
+      "Bash(grep -vE \"Loading|^$\")",
+      "Bash(node -e 'globalThis.__meResponse={user:null,admin:false,configured:true}; const H=require\\(\"./dom-harness\"\\); setTimeout\\(\\(\\)=>{ const gate=H.byId[\"gate\"]; console.log\\(\"gate shown?\", !!gate, \"\\(expect true\\)\"\\); process.exit\\(0\\); }, 350\\);')"
+    ]
+  }
+}

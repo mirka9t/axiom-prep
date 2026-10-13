@@ -1,5 +1,5 @@
 /* AXIOM — offline support. Private API responses always stay network-only. */
-const CACHE = 'axiom-v25';
+const CACHE = 'axiom-v26';
 const FILES = [
   './', 'index.html', 'css/app.css', 'manifest.webmanifest', 'icon.svg',
   'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png',
