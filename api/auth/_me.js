@@ -9,12 +9,14 @@ module.exports = async (req, res) => {
   try {
     const admin = C.isAdminReq(req); // stateless, no database needed
     const configured = db.configured(); // is the account database set up?
+    const backend = db.backendName(); // which database backend is active
     const user = await C.sessionUser(req);
-    if (!user) return C.ok(res, { user: null, admin, configured });
+    if (!user) return C.ok(res, { user: null, admin, configured, backend });
     return C.ok(res, {
       user: { id: user.id, username: user.username, name: user.name, role: user.role || 'user' },
       admin,
       configured,
+      backend,
       banned: !!user.banned,
       reason: user.banned ? (user.banReason || '') : '',
     });

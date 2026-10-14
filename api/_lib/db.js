@@ -25,6 +25,9 @@ const mem = USE_MEM ? require('./memdb') : null;
 function configured() {
   return HAS_UPSTASH || HAS_BLOB || USE_MEM;
 }
+function backendName() {
+  return HAS_UPSTASH ? 'redis' : (HAS_BLOB ? 'blob' : (USE_MEM ? 'memory' : 'none'));
+}
 
 /* Run one Redis command. args is an array like ['SET','k','v','EX','60']. */
 async function cmd(args) {
@@ -122,7 +125,7 @@ async function zrange(k, start, stop, rev) {
 }
 
 module.exports = {
-  configured, cmd, pipeline,
+  configured, backendName, cmd, pipeline,
   get, set, setNX, del, exists, expire, incr,
   getJSON, setJSON,
   lpush, ltrim, lrange, llen,
